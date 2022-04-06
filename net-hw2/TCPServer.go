@@ -45,6 +45,7 @@ func main() {
 			// Wait for command input
 			count, _ := conn.Read(buffer)
 			optionNum := string(buffer[:count])
+			fmt.Println(optionNum)
 			fmt.Printf("Command %s\n", optionNum)
 
 			// Process request
@@ -53,10 +54,9 @@ func main() {
 				count, _ := conn.Read(buffer)
 				conn.Write(bytes.ToUpper(buffer[:count]))
 			case "5":
+				conn.Close()
 				break L1
 			}
 		}
-
-		conn.Close()
 	}
 }

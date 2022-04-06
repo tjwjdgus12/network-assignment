@@ -26,17 +26,17 @@ func main() {
 	conn.Write([]byte(optionNum))
 
 	switch optionNum {
+
 	case "1":
 		fmt.Printf("Input sentence: ")
 		input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 		conn.Write([]byte(input))
+		buffer := make([]byte, 1024)
+		conn.Read(buffer)
+		fmt.Printf("Reply from server: %s", string(buffer))
+
 	case "5":
-
+		conn.Close()
+		break
 	}
-
-	buffer := make([]byte, 1024)
-	conn.Read(buffer)
-	fmt.Printf("Reply from server: %s", string(buffer))
-
-	conn.Close()
 }
