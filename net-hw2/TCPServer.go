@@ -11,7 +11,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 )
 
@@ -45,14 +44,15 @@ func main() {
 		for {
 			// Wait for command input
 			count, _ := conn.Read(buffer)
-			commandNum, _ := strconv.Atoi(string(buffer[:count]))
+			optionNum := string(buffer[:count])
+			fmt.Printf("Command %s\n", optionNum)
 
 			// Process request
-			switch commandNum {
-			case 1:
+			switch optionNum {
+			case "1":
 				count, _ := conn.Read(buffer)
 				conn.Write(bytes.ToUpper(buffer[:count]))
-			case 5:
+			case "5":
 				break L1
 			}
 		}
