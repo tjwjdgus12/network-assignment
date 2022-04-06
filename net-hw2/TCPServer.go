@@ -14,11 +14,6 @@ import (
 	"syscall"
 )
 
-func HandleSignal(c chan os.Signal) {
-	fmt.Println("Bye bye~")
-	os.Exit(0)
-}
-
 func main() {
 	serverPort := "22864"
 
@@ -27,7 +22,11 @@ func main() {
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go HandleSignal(c)
+	go func() {
+		<-c
+		fmt.Println("Bye bye~")
+		os.Exit(0)
+	}()
 
 	buffer := make([]byte, 1024)
 
