@@ -14,19 +14,23 @@ import (
 	"syscall"
 )
 
+func activateSignalHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\nBye bye~")
+		os.Exit(0)
+	}()
+}
+
 func main() {
 	serverPort := "22864"
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n", serverPort)
 
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		fmt.Println("Bye bye~")
-		os.Exit(0)
-	}()
+	activateSignalHandler()
 
 	buffer := make([]byte, 1024)
 
