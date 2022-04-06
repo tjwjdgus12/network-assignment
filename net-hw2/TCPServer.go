@@ -73,6 +73,9 @@ func main() {
 				conn.Close()
 				req_cnt++
 				break L1
+
+			default:
+				conn.Write([]byte("Invalid Input!"))
 			}
 
 			req_cnt++

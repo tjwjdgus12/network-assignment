@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -26,11 +27,12 @@ func main() {
 		endLine = "\n"
 	}
 
-	serverName := "10.210.60.90" //"nsl2.cau.ac.kr"
+	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
 
+	// Signal check
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -46,34 +48,35 @@ func main() {
 
 L1:
 	for {
-		fmt.Printf("\nInput option: ")
+		fmt.Printf("Input option: ")
 		optionNum, _ := reader.ReadString('\n')
 		optionNum = strings.TrimRight(optionNum, endLine)
+		requestTime := time.Now()
 		conn.Write([]byte(optionNum))
 
-		switch optionNum {
+		var elaspedTime time.Duration
 
+		switch optionNum {
 		case "1":
 			fmt.Printf("Input sentence: ")
 			input, _ := reader.ReadString('\n')
+			requestTime = time.Now()
 			conn.Write([]byte(input))
-			buffer := make([]byte, 1024)
-			conn.Read(buffer)
-			fmt.Printf("Reply from server: %s", string(buffer))
 
 		case "2":
-			buffer := make([]byte, 1024)
-			conn.Read(buffer)
-			fmt.Printf("Reply from server: %s", string(buffer))
-
+			break
 		case "3":
-			buffer := make([]byte, 1024)
-			conn.Read(buffer)
-			fmt.Printf("Reply from server: %s", string(buffer))
+			break
 
 		case "5":
 			conn.Close()
 			break L1
 		}
+
+		buffer := make([]byte, 1024)
+		conn.Read(buffer)
+		elaspedTime = time.Since(requestTime)
+		fmt.Printf("Reply from server: %s", string(buffer))
+		fmt.Printf("RTT = %.3f ms\n\n", float64(elaspedTime.Microseconds())/1000)
 	}
 }
