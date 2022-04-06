@@ -54,7 +54,7 @@ L1:
 		fmt.Printf("2) get my IP address and port number\n")
 		fmt.Printf("3) get server request count\n")
 		fmt.Printf("4) get server running time\n")
-		fmt.Printf("4) exit\n")
+		fmt.Printf("5) exit\n")
 
 		fmt.Printf("Input option: ")
 		optionNum, _ := reader.ReadString('\n')

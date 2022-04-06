@@ -89,7 +89,7 @@ func main() {
 				break L1
 
 			default:
-				response = "Invalid Input!"
+				response = "Invalid Input!\n"
 			}
 
 			conn.Write([]byte(response))
