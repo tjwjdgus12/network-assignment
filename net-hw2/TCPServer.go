@@ -11,9 +11,11 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 )
 
+// to check ctrl-c
 func activateSignalHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -35,10 +37,26 @@ func main() {
 	buffer := make([]byte, 1024)
 
 	for {
+		// Wait for connection
 		conn, _ := listener.Accept()
 		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
-		count, _ := conn.Read(buffer)
-		conn.Write(bytes.ToUpper(buffer[:count]))
+
+	L1:
+		for {
+			// Wait for command input
+			count, _ := conn.Read(buffer)
+			commandNum, _ := strconv.Atoi(string(buffer[:count]))
+
+			// Process request
+			switch commandNum {
+			case 1:
+				count, _ := conn.Read(buffer)
+				conn.Write(bytes.ToUpper(buffer[:count]))
+			case 5:
+				break L1
+			}
+		}
+
 		conn.Close()
 	}
 }
