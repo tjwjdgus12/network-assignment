@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // to handle ctrl-c
@@ -26,7 +27,15 @@ func activateSignalHandler() {
 	}()
 }
 
+func duration2HHMMSS(duration time.Duration) string {
+	HH := int64(duration.Hours()) % 100
+	MM := int64(duration.Minutes()) % 60
+	SS := int64(duration.Seconds()) % 60
+	return fmt.Sprintf("%02d:%02d:%02d", HH, MM, SS)
+}
+
 func main() {
+	startTime := time.Now()
 
 	activateSignalHandler()
 
@@ -34,7 +43,7 @@ func main() {
 	req_cnt := 0
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
-	fmt.Printf("Server is ready to receive on port %s\n", serverPort)
+	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
 
 	buffer := make([]byte, 1024)
 
@@ -45,6 +54,7 @@ func main() {
 
 	L1:
 		for {
+
 			// Wait for command input
 			count, _ := conn.Read(buffer)
 			if count == 0 {
@@ -54,6 +64,8 @@ func main() {
 			fmt.Printf("Command %s\n", optionNum)
 
 			// Process request
+			var response string
+
 			switch optionNum {
 
 			case "1":
@@ -62,12 +74,14 @@ func main() {
 
 			case "2":
 				clientAddr := strings.Split(conn.RemoteAddr().String(), ":")
-				response := fmt.Sprintf("clinet IP = %s, port = %s\n", clientAddr[0], clientAddr[1])
-				conn.Write([]byte(response))
+				response = fmt.Sprintf("clinet IP = %s, port = %s\n", clientAddr[0], clientAddr[1])
 
 			case "3":
-				response := fmt.Sprintf("requests served = %d\n", req_cnt)
-				conn.Write([]byte(response))
+				response = fmt.Sprintf("requests served = %d\n", req_cnt)
+
+			case "4":
+				HHMMSS := duration2HHMMSS(time.Since(startTime))
+				response = fmt.Sprintf("run time = %s\n", HHMMSS)
 
 			case "5":
 				conn.Close()
@@ -75,9 +89,10 @@ func main() {
 				break L1
 
 			default:
-				conn.Write([]byte("Invalid Input!"))
+				response = "Invalid Input!"
 			}
 
+			conn.Write([]byte(response))
 			req_cnt++
 		}
 		fmt.Printf("\n")

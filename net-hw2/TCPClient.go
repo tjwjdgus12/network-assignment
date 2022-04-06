@@ -44,10 +44,18 @@ func main() {
 	}()
 
 	localAddr := conn.LocalAddr().(*net.TCPAddr)
-	fmt.Printf("Client is running on port %d\n", localAddr.Port)
+	fmt.Printf("Client is running on port %d\n\n", localAddr.Port)
 
 L1:
 	for {
+
+		fmt.Printf("<Menu>\n")
+		fmt.Printf("1) convert text to UPPER-case\n")
+		fmt.Printf("2) get my IP address and port number\n")
+		fmt.Printf("3) get server request count\n")
+		fmt.Printf("4) get server running time\n")
+		fmt.Printf("4) exit\n")
+
 		fmt.Printf("Input option: ")
 		optionNum, _ := reader.ReadString('\n')
 		optionNum = strings.TrimRight(optionNum, endLine)
@@ -62,11 +70,6 @@ L1:
 			input, _ := reader.ReadString('\n')
 			requestTime = time.Now()
 			conn.Write([]byte(input))
-
-		case "2":
-			break
-		case "3":
-			break
 
 		case "5":
 			conn.Close()
