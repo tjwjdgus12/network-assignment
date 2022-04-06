@@ -15,7 +15,6 @@ import (
 )
 
 func HandleSignal(c chan os.Signal) {
-	sig := <-c
 	fmt.Println("Bye bye~")
 	os.Exit(0)
 }
