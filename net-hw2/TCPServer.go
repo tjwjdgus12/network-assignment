@@ -9,13 +9,26 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 )
+
+func HandleSignal(c chan os.Signal) {
+	sig := <-c
+	fmt.Println("Bye bye~")
+	os.Exit(0)
+}
 
 func main() {
 	serverPort := "22864"
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n", serverPort)
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go HandleSignal(c)
 
 	buffer := make([]byte, 1024)
 
