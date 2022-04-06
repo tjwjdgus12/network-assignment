@@ -5,8 +5,9 @@ import (
 )
 
 func main() {
-	for i := 0; i < 10; i++ {
-		cnt := i * 2
-		fmt.Println(cnt)
+	optionNum := ""
+	fmt.Scanln("%s", &optionNum)
+	if optionNum == "a" {
+		fmt.Println("good")
 	}
 }

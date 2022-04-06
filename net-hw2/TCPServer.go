@@ -26,6 +26,7 @@ func activateSignalHandler() {
 }
 
 func main() {
+
 	serverPort := "22864"
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
@@ -41,11 +42,10 @@ func main() {
 		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
 	L1:
-		for {
+		for i := 0; i < 10; i++ {
 			// Wait for command input
 			count, _ := conn.Read(buffer)
 			optionNum := string(buffer[:count])
-			fmt.Println(optionNum)
 			fmt.Printf("Command %s\n", optionNum)
 
 			// Process request
