@@ -6,7 +6,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -22,11 +21,12 @@ func activateSignalHandler() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Println("\nBye bye~")
+		fmt.Printf("\nBye bye~\n\n")
 		os.Exit(0)
 	}()
 }
 
+// to make 'HH:MM:SS' format
 func duration2HHMMSS(duration time.Duration) string {
 	HH := int64(duration.Hours()) % 100
 	MM := int64(duration.Minutes()) % 60
@@ -35,12 +35,13 @@ func duration2HHMMSS(duration time.Duration) string {
 }
 
 func main() {
+
 	startTime := time.Now()
 
 	activateSignalHandler()
 
 	serverPort := "22864"
-	req_cnt := 0
+	req_cnt := 0 // how many requests are recieved.
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
@@ -68,27 +69,26 @@ func main() {
 
 			switch optionNum {
 
-			case "1":
+			case "1": // send text converted to UPPER-case
 				count, _ := conn.Read(buffer)
-				conn.Write(bytes.ToUpper(buffer[:count]))
+				response = strings.ToUpper(string(buffer[:count]))
 
-			case "2":
+			case "2": // send client's IP address and port number
 				clientAddr := strings.Split(conn.RemoteAddr().String(), ":")
 				response = fmt.Sprintf("clinet IP = %s, port = %s\n", clientAddr[0], clientAddr[1])
 
-			case "3":
+			case "3": // send server request count
 				response = fmt.Sprintf("requests served = %d\n", req_cnt)
 
-			case "4":
+			case "4": // send server running time
 				HHMMSS := duration2HHMMSS(time.Since(startTime))
 				response = fmt.Sprintf("run time = %s\n", HHMMSS)
 
-			case "5":
+			case "5": // close connection
 				conn.Close()
-				req_cnt++
 				break L1
 
-			default:
+			default: // exception
 				response = "Invalid Input!\n"
 			}
 
