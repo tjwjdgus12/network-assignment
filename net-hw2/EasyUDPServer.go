@@ -80,6 +80,7 @@ func main() {
 			response = fmt.Sprintf("run time = %s\n", HHMMSS)
 
 		case "5": // close connection
+			fmt.Printf("\n")
 			continue
 
 		default: // exception
