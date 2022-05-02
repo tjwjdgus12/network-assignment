@@ -60,6 +60,7 @@ func main() {
 			for {
 				// Wait for command input
 				count, _ := conn.Read(buffer)
+				fmt.Printf("[test] Command %d\n", count)
 				if count == 0 {
 					continue
 				}
