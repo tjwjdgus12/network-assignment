@@ -61,6 +61,7 @@ L1:
 		optionNum, _ := reader.ReadString('\n')
 		optionNum = strings.TrimRight(optionNum, endLine) // remove endline
 		requestTime := time.Now()                         // start time measurement
+		conn.Write([]byte(optionNum))
 
 		switch optionNum {
 
