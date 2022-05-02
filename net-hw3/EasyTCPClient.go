@@ -65,7 +65,7 @@ L1:
 
 		switch optionNum {
 
-		case "6":
+		case "1":
 			fmt.Printf("Input sentence: ")
 			input, _ := reader.ReadString('\n')
 			requestTime = time.Now()

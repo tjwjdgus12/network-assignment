@@ -71,7 +71,7 @@ func main() {
 
 				switch optionNum {
 
-				case "6": // send text converted to UPPER-case
+				case "1": // send text converted to UPPER-case
 					count, _ := conn.Read(buffer)
 					response = strings.ToUpper(string(buffer[:count]))
 
