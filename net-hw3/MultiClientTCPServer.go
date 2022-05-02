@@ -51,7 +51,7 @@ func main() {
 	for {
 		// Wait for connection
 		conn, _ := listener.Accept()
-		//fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
+		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
 		go func(id int) {
 			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, clientCnt)
@@ -73,7 +73,7 @@ func main() {
 
 				case "1": // send text converted to UPPER-case
 					count, _ := conn.Read(buffer)
-					response = strings.ToUpper(string(buffer[1:count]))
+					response = strings.ToUpper(string(buffer[:count]))
 
 				case "2": // send client's IP address and port number
 					clientAddr := strings.Split(conn.RemoteAddr().String(), ":")
