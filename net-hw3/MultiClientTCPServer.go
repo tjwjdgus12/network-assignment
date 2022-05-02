@@ -53,13 +53,14 @@ func main() {
 		conn, _ := listener.Accept()
 		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
-		go func(id int, con net.Conn) {
+		go func(id int) {
 			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, clientCnt)
 
 			buffer := make([]byte, 1024)
 			for {
 				// Wait for command input
-				count, _ := con.Read(buffer)
+				count, _ := conn.Read(buffer)
+				fmt.Printf("[test] Count: %d\n", count)
 				if count == 0 {
 					continue
 				}
@@ -72,11 +73,11 @@ func main() {
 				switch optionNum {
 
 				case "1": // send text converted to UPPER-case
-					count, _ := con.Read(buffer)
+					count, _ := conn.Read(buffer)
 					response = strings.ToUpper(string(buffer[:count]))
 
 				case "2": // send client's IP address and port number
-					clientAddr := strings.Split(con.RemoteAddr().String(), ":")
+					clientAddr := strings.Split(conn.RemoteAddr().String(), ":")
 					response = fmt.Sprintf("clinet IP = %s, port = %s\n", clientAddr[0], clientAddr[1])
 
 				case "3": // send server request count
@@ -87,7 +88,7 @@ func main() {
 					response = fmt.Sprintf("run time = %s\n", HHMMSS)
 
 				case "5": // close connection
-					con.Close()
+					conn.Close()
 					clientCnt--
 					fmt.Printf("Client %d disconnected. Number of connected clients = %d\n", id, clientCnt)
 					return
@@ -96,10 +97,10 @@ func main() {
 					response = "Invalid Input!\n"
 				}
 
-				con.Write([]byte(response))
+				conn.Write([]byte(response))
 				reqCnt++
 			}
-		}(nextID, conn)
+		}(nextID)
 
 		nextID++
 		clientCnt++
