@@ -41,7 +41,9 @@ func main() {
 	activateSignalHandler()
 
 	serverPort := "22864"
-	req_cnt := 0 // how many requests are recieved.
+	reqCnt := 0 // how many requests are recieved.
+	nextID := 1
+	clientCnt := 0
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
@@ -51,9 +53,10 @@ func main() {
 	for {
 		// Wait for connection
 		conn, _ := listener.Accept()
-		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
+		//fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
-		go func() {
+		go func(id int) {
+			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, 1)
 		L1:
 			for {
 				// Wait for command input
@@ -71,14 +74,14 @@ func main() {
 
 				case "1": // send text converted to UPPER-case
 					count, _ := conn.Read(buffer)
-					response = strings.ToUpper(string(buffer[:count]))
+					response = strings.ToUpper(string(buffer[1:count]))
 
 				case "2": // send client's IP address and port number
 					clientAddr := strings.Split(conn.RemoteAddr().String(), ":")
 					response = fmt.Sprintf("clinet IP = %s, port = %s\n", clientAddr[0], clientAddr[1])
 
 				case "3": // send server request count
-					response = fmt.Sprintf("requests served = %d\n", req_cnt)
+					response = fmt.Sprintf("requests served = %d\n", reqCnt)
 
 				case "4": // send server running time
 					HHMMSS := duration2HHMMSS(time.Since(startTime))
@@ -86,6 +89,7 @@ func main() {
 
 				case "5": // close connection
 					conn.Close()
+					clientCnt--
 					break L1
 
 				default: // exception
@@ -93,9 +97,12 @@ func main() {
 				}
 
 				conn.Write([]byte(response))
-				req_cnt++
+				reqCnt++
 			}
 			fmt.Printf("\n")
-		}()
+		}(nextID)
+
+		nextID++
+		clientCnt++
 	}
 }
