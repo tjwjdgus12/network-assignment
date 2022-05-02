@@ -48,8 +48,6 @@ func main() {
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
 
-	buffer := make([]byte, 1024)
-
 	for {
 		// Wait for connection
 		conn, _ := listener.Accept()
@@ -57,7 +55,8 @@ func main() {
 
 		go func(id int) {
 			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, clientCnt)
-		L1:
+
+			buffer := make([]byte, 1024)
 			for {
 				// Wait for command input
 				count, _ := conn.Read(buffer)
@@ -90,7 +89,8 @@ func main() {
 				case "5": // close connection
 					conn.Close()
 					clientCnt--
-					break L1
+					fmt.Printf("Client %d disconnected. Number of connected clients = %d\n", id, clientCnt)
+					return
 
 				default: // exception
 					response = "Invalid Input!\n"
@@ -99,7 +99,6 @@ func main() {
 				conn.Write([]byte(response))
 				reqCnt++
 			}
-			fmt.Printf("\n")
 		}(nextID)
 
 		nextID++
