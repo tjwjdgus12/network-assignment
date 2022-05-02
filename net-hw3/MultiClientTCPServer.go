@@ -56,7 +56,7 @@ func main() {
 		//fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
 		go func(id int) {
-			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, 1)
+			fmt.Printf("Client %d connected. Number of connected clients = %d\n", id, clientCnt)
 		L1:
 			for {
 				// Wait for command input
