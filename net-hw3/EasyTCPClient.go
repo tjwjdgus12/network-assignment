@@ -28,7 +28,7 @@ func main() {
 		endLine = "\n"
 	}
 
-	serverName := "nsl2.cau.ac.kr"
+	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
@@ -60,7 +60,13 @@ L1:
 		fmt.Printf("Input option: ")
 		optionNum, _ := reader.ReadString('\n')
 		optionNum = strings.TrimRight(optionNum, endLine) // remove endline
-		requestTime := time.Now()                         // start time measurement
+
+		if optionNum == "" {
+			fmt.Println()
+			continue
+		}
+
+		requestTime := time.Now() // start time measurement
 		conn.Write([]byte(optionNum))
 
 		switch optionNum {
