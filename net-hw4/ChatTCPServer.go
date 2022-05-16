@@ -95,7 +95,10 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 				message = message[delimIdx+1:]
 			}
 			data := fmt.Sprintf("%s> %s", name, message)
-			channel[target] <- data
+
+			if c, ok := channel[target]; ok {
+				c <- data
+			}
 
 		case CMD_EXIT:
 			con.Close()

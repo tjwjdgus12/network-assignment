@@ -57,7 +57,7 @@ func parseInput(input string) (byte, string, bool) {
 			commandStr = input
 		} else {
 			commandStr = input[:delimIdx]
-			message = input[delimIdx:]
+			message = input[delimIdx+1:]
 		}
 
 		switch commandStr {
