@@ -81,14 +81,6 @@ func parseInput(input string) (byte, string, bool) {
 	return command, message, true
 }
 
-// command, message -> data to send
-func makeData(cmd byte, msg string) []byte {
-	buffer := make([]byte, 1024)
-	buffer[0] = byte(cmd)
-	copy(buffer[1:], []byte(msg))
-	return buffer
-}
-
 func main() {
 	if len(os.Args) != 2 {
 		panic("invalid arguments")
@@ -97,7 +89,7 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
+	serverName := "nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
@@ -107,7 +99,7 @@ func main() {
 	response := make([]byte, 1024)
 	count, _ := conn.Read(response)
 	success := response[0] == '1'
-	fmt.Print(string(response[1:count]))
+	fmt.Println(string(response[1:count]))
 
 	// full room or duplicated nickname
 	if !success {
@@ -119,10 +111,13 @@ func main() {
 
 	// message(from server) reciever
 	go func() {
+		data := make([]byte, 1024)
 		for {
-			data := make([]byte, 1024)
 			count, _ := conn.Read(data)
-			fmt.Println("server from", string(data[:count]))
+			if count == 0 {
+				continue
+			}
+			fmt.Println(string(data[:count]))
 		}
 	}()
 
@@ -133,18 +128,18 @@ func main() {
 			continue
 		}
 		if command == CMD_INVALID {
-			fmt.Print("invalid command\n\n")
+			fmt.Println("invalid command")
 			continue
 		}
 
-		data := makeData(command, message)
-		conn.Write(data)
+		data := fmt.Sprintf("%c%s", command, message)
+		conn.Write([]byte(data))
 
 		if command == CMD_EXIT {
 			break
 		}
 
-		fmt.Println()
+		//fmt.Println()
 	}
 
 	fmt.Printf("gg~\n")

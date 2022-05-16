@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -53,7 +54,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 	response += fmt.Sprintf("[There are %d users connected.]", len(channel))
 	con.Write([]byte(response))
 
-	// channel reciever
+	// channel recieve && write
 	go func() {
 		for {
 			data := <-channel[name]
@@ -83,7 +84,18 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 		case CMD_LIST:
 
 		case CMD_DM:
+			var target string
 			message = string(buffer[1:count])
+			delimIdx := strings.IndexByte(message, ' ')
+			if delimIdx == -1 {
+				target = message
+				message = ""
+			} else {
+				target = message[:delimIdx]
+				message = message[delimIdx+1:]
+			}
+			data := fmt.Sprintf("%s> %s", name, message)
+			channel[target] <- data
 
 		case CMD_EXIT:
 			con.Close()
