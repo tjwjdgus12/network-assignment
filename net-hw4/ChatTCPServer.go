@@ -49,11 +49,6 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 
 	fmt.Printf("%s joined from %s. There are %d users connected\n", name, con.RemoteAddr().String(), len(channel))
 
-	response := "1" // success code
-	response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", name, con.LocalAddr().String())
-	response += fmt.Sprintf("[There are %d users connected.]", len(channel))
-	con.Write([]byte(response))
-
 	// channel recieve && write
 	go func() {
 		for {
@@ -153,6 +148,27 @@ func main() {
 		buffer := make([]byte, 32)
 		count, _ := conn.Read(buffer)
 		nickname := string(buffer[:count])
+
+		var response string
+
+		if len(channel) >= 8 { // full
+			response = "0"
+			response += "[chatting room full. cannot connect.]"
+			conn.Write([]byte(response))
+			continue
+		}
+
+		if _, exist := channel[nickname]; exist { // duplicated nickname
+			response = "0"
+			response += "[that nickname is already used by another user. cannot connect.]"
+			conn.Write([]byte(response))
+			continue
+		}
+
+		response = "1" // success code
+		response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", nickname, conn.LocalAddr().String())
+		response += fmt.Sprintf("[There are %d users connected.]", len(channel))
+		conn.Write([]byte(response))
 
 		channel[nickname] = make(chan string)
 
