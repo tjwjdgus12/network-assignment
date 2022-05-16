@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // command list
@@ -109,6 +110,8 @@ func main() {
 
 	go activateSignalHandler(conn)
 
+	var rttRequestTime time.Time
+
 	// message(from server) reciever
 	go func() {
 		data := make([]byte, 1024)
@@ -117,7 +120,13 @@ func main() {
 			if count == 0 {
 				continue
 			}
-			fmt.Println(string(data[:count]))
+			message := string(data[:count])
+			if message == "RTT" {
+				fmt.Printf("RTT = %.3f ms\n", float64(time.Since(rttRequestTime).Microseconds())/1000)
+				continue
+			}
+
+			fmt.Println(message)
 		}
 	}()
 
@@ -130,6 +139,9 @@ func main() {
 		if command == CMD_INVALID {
 			fmt.Println("invalid command")
 			continue
+		}
+		if command == CMD_RTT {
+			rttRequestTime = time.Now()
 		}
 
 		data := fmt.Sprintf("%c%s", command, message)

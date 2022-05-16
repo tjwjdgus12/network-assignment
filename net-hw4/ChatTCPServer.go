@@ -115,7 +115,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 			con.Write([]byte(VERSION))
 
 		case CMD_RTT:
-			con.Write([]byte("DUMMY"))
+			con.Write([]byte("RTT"))
 
 		default:
 			fmt.Print("invalid command\n")
