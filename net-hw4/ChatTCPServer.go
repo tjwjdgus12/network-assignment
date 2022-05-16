@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 )
 
 var VERSION = "1.0.0"
@@ -35,14 +34,6 @@ func activateSignalHandler() {
 		fmt.Printf("\ngg~\n\n")
 		os.Exit(0)
 	}()
-}
-
-// to make 'HH:MM:SS' format
-func duration2HHMMSS(duration time.Duration) string {
-	HH := int64(duration.Hours()) % 100
-	MM := int64(duration.Minutes()) % 60
-	SS := int64(duration.Seconds()) % 60
-	return fmt.Sprintf("%02d:%02d:%02d", HH, MM, SS)
 }
 
 func serveClient(name string, con net.Conn, channel map[string]chan string) {
@@ -151,7 +142,7 @@ func main() {
 
 		var response string
 
-		if len(channel) >= 8 { // full
+		if len(channel) >= 8 { // full room
 			response = "0"
 			response += "[chatting room full. cannot connect.]"
 			conn.Write([]byte(response))
@@ -165,12 +156,12 @@ func main() {
 			continue
 		}
 
+		channel[nickname] = make(chan string)
+
 		response = "1" // success code
 		response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", nickname, conn.LocalAddr().String())
 		response += fmt.Sprintf("[There are %d users connected.]", len(channel))
 		conn.Write([]byte(response))
-
-		channel[nickname] = make(chan string)
 
 		go serveClient(nickname, conn, channel)
 	}
