@@ -126,7 +126,7 @@ func main() {
 				continue
 			}
 			if message == "KILL" {
-				fmt.Printf("\n[you have been banished.]\n\n")
+				fmt.Printf("[you have been banished.]\n\n")
 				os.Exit(0)
 			}
 			fmt.Println(message)

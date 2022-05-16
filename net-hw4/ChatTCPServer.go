@@ -123,7 +123,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 		}
 
 		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
-			channel[name] <- "KILL"
+			con.Write([]byte("KILL"))
 			delete(channel, name)
 
 			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
@@ -131,7 +131,6 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
 				channel[target] <- data
 			}
-
 			con.Close()
 			return
 		}
