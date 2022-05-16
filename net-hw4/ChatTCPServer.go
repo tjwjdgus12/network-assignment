@@ -121,6 +121,19 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 			fmt.Print("invalid command\n")
 			con.Write([]byte("invaild command"))
 		}
+
+		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
+			con.Close()
+			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
+			for target := range channel {
+				if target == name {
+					channel[name] <- "KILL"
+					continue
+				}
+				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
+				channel[target] <- data
+			}
+		}
 	}
 }
 

@@ -66,7 +66,7 @@ func parseInput(input string) (byte, string, bool) {
 			command = CMD_LIST
 		case `\dm`:
 			command = CMD_DM
-		case `exit`:
+		case `\exit`:
 			command = CMD_EXIT
 		case `\ver`:
 			command = CMD_VER
@@ -125,7 +125,10 @@ func main() {
 				fmt.Printf("RTT = %.3f ms\n", float64(time.Since(rttRequestTime).Microseconds())/1000)
 				continue
 			}
-
+			if message == "KILL" {
+				fmt.Printf("\n[you have been banished.]\n\n")
+				os.Exit(0)
+			}
 			fmt.Println(message)
 		}
 	}()
