@@ -73,7 +73,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 
 		case CMD_DEFAULT:
 			message = string(buffer[1:count])
-			for target, _ := range channel {
+			for target := range channel {
 				if target == name {
 					continue
 				}
@@ -82,6 +82,11 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 			}
 
 		case CMD_LIST:
+			data := ""
+			for nickname := range channel {
+				data += fmt.Sprintf("%s %s\n", nickname, con.RemoteAddr().String())
+			}
+			channel[name] <- data
 
 		case CMD_DM:
 			var target string
@@ -94,7 +99,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 				target = message[:delimIdx]
 				message = message[delimIdx+1:]
 			}
-			data := fmt.Sprintf("%s> %s", name, message)
+			data := fmt.Sprintf("from: %s> %s", name, message)
 
 			if c, ok := channel[target]; ok {
 				c <- data
