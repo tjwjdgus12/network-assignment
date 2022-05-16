@@ -16,8 +16,6 @@ import (
 
 var VERSION = "1.0.0"
 
-type CommandType byte
-
 const (
 	CMD_DEFAULT byte = iota
 	CMD_LIST         // 1
@@ -46,12 +44,70 @@ func duration2HHMMSS(duration time.Duration) string {
 	return fmt.Sprintf("%02d:%02d:%02d", HH, MM, SS)
 }
 
-func main() {
+func serveClient(name string, con net.Conn, channel map[string]chan string) {
 
+	fmt.Printf("%s joined from %s. There are %d users connected\n", name, con.RemoteAddr().String(), len(channel))
+
+	response := "1" // success code
+	response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", name, con.LocalAddr().String())
+	response += fmt.Sprintf("[There are %d users connected.]", len(channel))
+	con.Write([]byte(response))
+
+	// channel reciever
+	go func() {
+		for {
+			data := <-channel[name]
+			con.Write([]byte(data))
+		}
+	}()
+
+	for {
+		buffer := make([]byte, 1024)
+		count, _ := con.Read(buffer)
+		command := buffer[0]
+
+		var message string
+
+		switch command {
+
+		case CMD_DEFAULT:
+			message = string(buffer[1:count])
+			for target, _ := range channel {
+				if target == name {
+					continue
+				}
+				data := fmt.Sprintf("%s> %s", name, message)
+				channel[target] <- data
+			}
+
+		case CMD_LIST:
+
+		case CMD_DM:
+			message = string(buffer[1:count])
+
+		case CMD_EXIT:
+			con.Close()
+			delete(channel, name)
+			fmt.Printf("%s left. There are %d users now\n", name, len(channel))
+			return
+
+		case CMD_VER:
+			con.Write([]byte(VERSION))
+
+		case CMD_RTT:
+			con.Write([]byte("DUMMY"))
+
+		default:
+			fmt.Print("invalid command\n")
+			con.Write([]byte("invaild command"))
+		}
+	}
+}
+
+func main() {
 	activateSignalHandler()
 
 	serverPort := "22864"
-	clientCnt := 0
 
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
@@ -60,58 +116,13 @@ func main() {
 
 	for {
 		conn, _ := listener.Accept()
-		fmt.Printf("Connection request from %s\n", conn.RemoteAddr().String())
 
 		buffer := make([]byte, 32)
 		count, _ := conn.Read(buffer)
 		nickname := string(buffer[:count])
 
-		go func(name string, con net.Conn) {
+		channel[nickname] = make(chan string)
 
-			fmt.Printf("%s joined from %s. There are %d users connected\n", nickname, conn.RemoteAddr().String(), clientCnt)
-
-			con.Write([]byte("welcome %s to CAU network class chat room at %s. There are %d users connected"))
-
-			for {
-				buffer := make([]byte, 1024)
-				count, _ := con.Read(buffer)
-
-				command := buffer[0]
-
-				var message string
-
-				switch command {
-
-				case CMD_DEFAULT:
-					message = string(buffer[1:count])
-					fmt.Println(message)
-					con.Write([]byte("ack"))
-
-				case CMD_LIST:
-					con.Write([]byte("DUMMY"))
-
-				case CMD_DM:
-					message = string(buffer[1:count])
-					con.Write([]byte("DUMMY"))
-
-				case CMD_EXIT:
-					con.Close()
-					fmt.Printf("%s left. There are %d users now\n\n", nickname, clientCnt)
-					return
-
-				case CMD_VER:
-					con.Write([]byte(VERSION))
-
-				case CMD_RTT:
-					con.Write([]byte("DUMMY"))
-
-				default:
-					fmt.Print("invalid command\n")
-					con.Write([]byte("DUMMY"))
-				}
-			}
-		}(nickname, conn)
-
-		clientCnt++
+		go serveClient(nickname, conn, channel)
 	}
 }

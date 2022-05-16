@@ -28,7 +28,7 @@ func main() {
 		endLine = "\n"
 	}
 
-	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
+	serverName := "nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
