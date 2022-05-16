@@ -114,7 +114,7 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 
 			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
 			for target := range channel {
-				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
+				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]", name, len(channel))
 				channel[target] <- data
 			}
 			con.Close()
@@ -156,7 +156,7 @@ func main() {
 			continue
 		}
 
-		channel[nickname] = make(chan string)
+		channel[nickname] = make(chan string, 2)
 
 		response = "1" // success code
 		response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", nickname, conn.LocalAddr().String())
