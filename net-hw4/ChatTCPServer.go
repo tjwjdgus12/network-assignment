@@ -112,9 +112,9 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 			con.Write([]byte("KILL"))
 			delete(channel, name)
 
-			fmt.Printf("\n[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
+			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
 			for target := range channel {
-				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]", name, len(channel))
+				data := fmt.Sprintf("\n[%s is disconnected. There are %d users in the chat room.]", name, len(channel))
 				channel[target] <- data
 			}
 			con.Close()
