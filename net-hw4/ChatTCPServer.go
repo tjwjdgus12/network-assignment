@@ -112,14 +112,14 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 			return
 
 		case CMD_VER:
-			con.Write([]byte(VERSION))
+			channel[name] <- VERSION
 
 		case CMD_RTT:
-			con.Write([]byte("RTT"))
+			channel[name] <- "RTT"
 
 		default:
 			fmt.Print("invalid command\n")
-			con.Write([]byte("invaild command"))
+			channel[name] <- "invaild command"
 		}
 
 		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
