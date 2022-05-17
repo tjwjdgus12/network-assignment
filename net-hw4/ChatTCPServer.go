@@ -103,13 +103,14 @@ func serveClient(myname string, connection map[string]net.Conn) {
 		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
 			connection[myname].Write([]byte("KILL"))
 			delete(connection, myname)
+			connection[myname].Close()
 
 			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", myname, len(connection))
+
 			for target := range connection {
 				data := fmt.Sprintf("\n[%s is disconnected. There are %d users in the chat room.]", myname, len(connection))
 				connection[target].Write([]byte(data))
 			}
-			connection[myname].Close()
 			return
 		}
 	}
