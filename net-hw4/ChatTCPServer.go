@@ -102,8 +102,8 @@ func serveClient(myname string, connection map[string]net.Conn) {
 
 		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
 			connection[myname].Write([]byte("KILL"))
-			delete(connection, myname)
 			connection[myname].Close()
+			delete(connection, myname)
 
 			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", myname, len(connection))
 
