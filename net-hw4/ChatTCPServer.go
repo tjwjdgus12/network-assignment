@@ -36,21 +36,13 @@ func activateSignalHandler() {
 	}()
 }
 
-func serveClient(name string, con net.Conn, channel map[string]chan string) {
+func serveClient(myname string, connection map[string]net.Conn) {
 
-	fmt.Printf("%s joined from %s. There are %d users connected\n", name, con.RemoteAddr().String(), len(channel))
-
-	// channel recieve && write
-	go func() {
-		for {
-			data := <-channel[name]
-			con.Write([]byte(data))
-		}
-	}()
+	fmt.Printf("%s joined from %s. There are %d users connected\n", myname, connection[myname].RemoteAddr().String(), len(connection))
 
 	for {
 		buffer := make([]byte, 1024)
-		count, _ := con.Read(buffer)
+		count, _ := connection[myname].Read(buffer)
 		command := buffer[0]
 
 		var message string
@@ -59,20 +51,20 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 
 		case CMD_DEFAULT:
 			message = string(buffer[1:count])
-			for target := range channel {
-				if target == name {
+			for target := range connection {
+				if target == myname {
 					continue
 				}
-				data := fmt.Sprintf("%s> %s", name, message)
-				channel[target] <- data
+				data := fmt.Sprintf("%s> %s", myname, message)
+				connection[target].Write([]byte(data))
 			}
 
 		case CMD_LIST:
 			data := ""
-			for nickname := range channel {
-				data += fmt.Sprintf("%s %s\n", nickname, con.RemoteAddr().String())
+			for name := range connection {
+				data += fmt.Sprintf("%s %s\n", name, connection[name].RemoteAddr().String())
 			}
-			channel[name] <- data
+			connection[myname].Write([]byte(data))
 
 		case CMD_DM:
 			var target string
@@ -85,39 +77,39 @@ func serveClient(name string, con net.Conn, channel map[string]chan string) {
 				target = message[:delimIdx]
 				message = message[delimIdx+1:]
 			}
-			data := fmt.Sprintf("from: %s> %s", name, message)
+			data := fmt.Sprintf("from: %s> %s", myname, message)
 
-			if c, ok := channel[target]; ok {
-				c <- data
+			if con, ok := connection[target]; ok {
+				con.Write([]byte(data))
 			}
 
 		case CMD_EXIT:
-			con.Close()
-			delete(channel, name)
-			fmt.Printf("%s left. There are %d users now\n", name, len(channel))
+			connection[myname].Close()
+			delete(connection, myname)
+			fmt.Printf("%s left. There are %d users now\n", myname, len(connection))
 			return
 
 		case CMD_VER:
-			channel[name] <- VERSION
+			connection[myname].Write([]byte(VERSION))
 
 		case CMD_RTT:
-			channel[name] <- "RTT"
+			connection[myname].Write([]byte("RTT"))
 
 		default:
 			fmt.Print("invalid command\n")
-			channel[name] <- "invaild command"
+			connection[myname].Write([]byte("invalid command"))
 		}
 
 		if strings.Contains(strings.ToUpper(message), "I HATE PROFESSOR") {
-			con.Write([]byte("KILL"))
-			delete(channel, name)
+			connection[myname].Write([]byte("KILL"))
+			delete(connection, myname)
 
-			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", name, len(channel))
-			for target := range channel {
-				data := fmt.Sprintf("\n[%s is disconnected. There are %d users in the chat room.]", name, len(channel))
-				channel[target] <- data
+			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", myname, len(connection))
+			for target := range connection {
+				data := fmt.Sprintf("\n[%s is disconnected. There are %d users in the chat room.]", myname, len(connection))
+				connection[target].Write([]byte(data))
 			}
-			con.Close()
+			connection[myname].Close()
 			return
 		}
 	}
@@ -131,7 +123,7 @@ func main() {
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
 
-	channel := make(map[string]chan string)
+	connection := make(map[string]net.Conn)
 
 	for {
 		conn, _ := listener.Accept()
@@ -142,27 +134,27 @@ func main() {
 
 		var response string
 
-		if len(channel) >= 8 { // full room
-			response = "0"
+		if len(connection) >= 8 { // full room
+			response = "0" // fail code
 			response += "[chatting room full. cannot connect.]"
 			conn.Write([]byte(response))
 			continue
 		}
 
-		if _, exist := channel[nickname]; exist { // duplicated nickname
-			response = "0"
+		if _, exist := connection[nickname]; exist { // duplicated nickname
+			response = "0" // fail code
 			response += "[that nickname is already used by another user. cannot connect.]"
 			conn.Write([]byte(response))
 			continue
 		}
 
-		channel[nickname] = make(chan string, 2)
+		connection[nickname] = conn
 
 		response = "1" // success code
 		response += fmt.Sprintf("[welcome %s to CAU network class chat room at %s.]\n", nickname, conn.LocalAddr().String())
-		response += fmt.Sprintf("[There are %d users connected.]", len(channel))
-		conn.Write([]byte(response))
+		response += fmt.Sprintf("[There are %d users connected.]", len(connection))
+		connection[nickname].Write([]byte(response))
 
-		go serveClient(nickname, conn, channel)
+		go serveClient(nickname, connection)
 	}
 }
