@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"os/signal"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -136,37 +134,25 @@ func checkWin(b Board, x, y int) int {
 	return 0
 }
 
-func clear() {
-	fmt.Printf("%s", runtime.GOOS)
-
-	clearMap := make(map[string]func()) //Initialize it
-	clearMap["linux"] = func() {
-		cmd := exec.Command("clear") //Linux example, its tested
-		cmd.Stdout = os.Stdout
-		cmd.Run()
-	}
-	clearMap["windows"] = func() {
-		cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
-		cmd.Stdout = os.Stdout
-		cmd.Run()
-	}
-
-	value, ok := clearMap[runtime.GOOS] //runtime.GOOS -> linux, windows, darwin etc.
-	if ok {                             //if we defined a clearMap func for that platform:
-		value() //we execute it
-	} else { //unsupported platform
-		panic("Your platform is unsupported! I can't clearMap terminal screen :(")
-	}
+type NetworkStatus struct {
+	network string
+	conn    net.Conn
+	pconn   net.PacketConn
+	addr    *net.UDPAddr
 }
 
 // to handle ctrl-c
-func activateSignalHandler(conn net.Conn) {
+func activateSignalHandler(status *NetworkStatus) {
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	<-c
-	conn.Write([]byte("thanks"))
-	conn.Close()
-	fmt.Printf("\ngg~\n\n")
+	if status.network == "tcp" {
+		status.conn.Write([]byte{CMD_EXIT})
+		status.conn.Close()
+	} else {
+		status.pconn.WriteTo([]byte{CMD_EXIT}, status.addr)
+	}
+	fmt.Println("Bye~")
 	os.Exit(0)
 }
 
@@ -215,29 +201,51 @@ func main() {
 	}
 	nickname := os.Args[1]
 
-	serverName := "nsl2.cau.ac.kr"
+	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	pconn, _ := net.ListenPacket("udp", ":")
-	localAddr := pconn.LocalAddr().(*net.UDPAddr)
-
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
 
-	conn.Write([]byte(nickname))
-	conn.Write([]byte(localAddr.String()))
+	fmt.Printf("welcome %s to p2p-omok server at %s.\n", nickname, conn.RemoteAddr().String())
+
+	networkStatus := NetworkStatus{"tcp", conn, nil, nil}
+
+	go activateSignalHandler(&networkStatus)
+
+	localAddr := pconn.LocalAddr().(*net.UDPAddr)
+
+	dataList := []string{nickname, strconv.Itoa(localAddr.Port)}
+	data := strings.Join(dataList, " ")
+	conn.Write([]byte(data))
 
 	buffer := make([]byte, 1024)
-	count, _ := conn.Read(buffer)
-	data := string(buffer[:count])
-	dataList := strings.Split(data, " ")
 
-	targetName := dataList[0]
-	targetAddrStr := dataList[1]
-	targetAddr, _ := net.ResolveUDPAddr("udp", targetAddrStr)
+	for {
+		count, _ := conn.Read(buffer)
+		if count == 0 {
+			continue
+		}
+		msg := string(buffer[:count])
+		if msg == `\play` {
+			break
+		}
+		fmt.Println(msg)
+	}
+
+	count, _ := conn.Read(buffer)
+	data = string(buffer[:count])
+	dataList = strings.Split(data, " ")
+
+	opponentName := dataList[0]
+	opponentAddrStr := dataList[1]
 	myNum, _ := strconv.Atoi(dataList[2])
+
+	opponentAddr, _ := net.ResolveUDPAddr("udp", opponentAddrStr)
+	networkStatus = NetworkStatus{"udp", nil, pconn, opponentAddr}
 	opponentNum := (myNum % 2) + 1
 
-	conn.Write([]byte("thanks"))
+	conn.Write([]byte("o"))
 	conn.Close()
 
 	reader := bufio.NewReader(os.Stdin)
@@ -245,7 +253,14 @@ func main() {
 	board := Board{}
 	stoneCnt := 0
 
+	isFinish := false
 	myTurn := (myNum == 1)
+
+	if myTurn {
+		fmt.Printf("you play first.\n")
+	} else {
+		fmt.Printf("%s plays first.\n", opponentName)
+	}
 
 	for i := 0; i < Row; i++ {
 		var tempRow []int
@@ -255,9 +270,9 @@ func main() {
 		board = append(board, tempRow)
 	}
 
-	clear()
 	printBoard(board)
 
+	// Reciever
 	go func() {
 		buffer := make([]byte, 1024)
 		for {
@@ -267,7 +282,7 @@ func main() {
 
 			switch command {
 			case CMD_DEFAULT:
-				fmt.Printf("%s> message\n", targetName)
+				fmt.Printf("%s> %s\n", opponentName, message)
 
 			case CMD_PLACE:
 				xy := strings.Split(message, " ")
@@ -276,28 +291,38 @@ func main() {
 
 				board[x][y] = opponentNum
 
-				clear()
 				printBoard(board)
 
 				win := checkWin(board, x, y)
 				if win != 0 {
-					fmt.Println("you lose")
+					fmt.Println("you lose.")
+					isFinish = true
 				}
 
 				stoneCnt += 1
 				if stoneCnt == Row*Col {
-					fmt.Println("draw")
+					fmt.Println("draw.")
+					isFinish = true
 				}
 
 				myTurn = !myTurn
 
 			case CMD_GG:
+				fmt.Println("you win.")
+				isFinish = true
+				fmt.Printf("%s has given up.\n", opponentName)
 
 			case CMD_EXIT:
+				if !isFinish {
+					fmt.Println("you win.")
+					isFinish = true
+				}
+				fmt.Printf("%s has exitted.\n", opponentName)
 			}
 		}
 	}()
 
+	// Sender
 	for {
 		input, _ := reader.ReadString('\n')
 		command, message, ok := parseInput(input)
@@ -305,9 +330,11 @@ func main() {
 			continue
 		}
 		switch command {
-		case CMD_DEFAULT:
 
 		case CMD_PLACE:
+			if isFinish {
+				continue
+			}
 			if !myTurn {
 				fmt.Println("not your turn")
 				continue
@@ -330,24 +357,37 @@ func main() {
 
 			board[x][y] = myNum
 
-			clear()
 			printBoard(board)
 
 			win := checkWin(board, x, y)
 			if win != 0 {
-				fmt.Println("you win")
+				fmt.Println("you win.")
+				isFinish = true
 			}
 
 			stoneCnt += 1
 			if stoneCnt == Row*Col {
-				fmt.Println("draw")
+				fmt.Println("draw.")
+				isFinish = true
 			}
 
 			myTurn = !myTurn
 
 		case CMD_GG:
+			if isFinish {
+				continue
+			}
+			fmt.Println("you lose.")
+			isFinish = true
 
 		case CMD_EXIT:
+			if !isFinish {
+				fmt.Println("you lose.")
+				isFinish = true
+			}
+			pconn.WriteTo([]byte{CMD_EXIT}, opponentAddr)
+			fmt.Println("Bye~")
+			return
 
 		case CMD_INVALID:
 			fmt.Println("invalid command")
@@ -355,6 +395,6 @@ func main() {
 		}
 
 		data := fmt.Sprintf("%c%s", command, message)
-		pconn.WriteTo([]byte(data), targetAddr)
+		pconn.WriteTo([]byte(data), opponentAddr)
 	}
 }

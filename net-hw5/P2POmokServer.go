@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -23,60 +22,82 @@ type Client struct {
 	connection net.Conn
 }
 
+const CMD_EXIT byte = 3
+
 func activateSignalHandler() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Printf("\ngg~\n\n")
+		fmt.Println(`\exit`)
 		os.Exit(0)
 	}()
 }
 
-func waitPlayer(listener *net.Listener, wg *sync.WaitGroup, player *Client) {
+func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, match chan int) {
+	opNum := (myNum + 1) % 2
+
 	for {
 		conn, _ := (*listener).Accept()
 
-		buffer := make([]byte, 64)
+		buffer := make([]byte, 1024)
 		count, _ := conn.Read(buffer)
-		name := string(buffer[:count])
-		count, _ = conn.Read(buffer)
-		addr := string(buffer[:count])
+		data := string(buffer[:count])
+		dataList := strings.Split(data, " ")
 
-		*player = Client{name, addr, conn}
+		ip := strings.Split(conn.RemoteAddr().String(), ":")[0]
+		player[myNum] = Client{dataList[0], ip + ":" + dataList[1], conn}
 
-		wg.Done()
+		*cnt += 1
+
+		fmt.Printf("\n%s joined from %s. UDP port %s.\n", dataList[0], conn.RemoteAddr().String(), dataList[1])
+		if *cnt == 1 {
+			fmt.Printf("1 user connected, waiting for another\n")
+			conn.Write([]byte("waiting for an opponent."))
+		}
+		if *cnt == 2 {
+			fmt.Printf("2 users connected, notifying %s and %s.\n", player[myNum].name, player[opNum].name)
+			msg := fmt.Sprintf("%s is waiting for you (%s).", player[opNum].name, player[opNum].address)
+			conn.Write([]byte(msg))
+			msg = fmt.Sprintf("%s joined (%s).", player[myNum].name, player[myNum].address)
+			player[opNum].connection.Write([]byte(msg))
+			match <- 1
+		}
 
 		// wait client's sign
 		conn.Read(buffer)
+
 		conn.Close()
-		wg.Add(1)
+		*cnt -= 1
+
+		if buffer[0] == CMD_EXIT {
+			fmt.Printf("%s disconnected.\n", player[myNum].name)
+		}
 	}
 }
 
 func main() {
 	serverPort := "22864"
-
 	listener, _ := net.Listen("tcp", ":"+serverPort)
-	fmt.Printf("Server is ready to receive on port %s\n\n", serverPort)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-
+	clientCnt := 0
 	var player [2]Client
 
-	go waitPlayer(&listener, &wg, &player[0])
-	go waitPlayer(&listener, &wg, &player[1])
+	match := make(chan int)
+
+	go waitPlayer(&listener, &clientCnt, &player, 0, match)
+	go waitPlayer(&listener, &clientCnt, &player, 1, match)
 
 	for {
-		wg.Wait()
+		<-match
 
-		fmt.Printf("%s vs %s match!\n", player[0].name, player[1].name)
+		fmt.Printf("%s and %s disconnected.\n", player[0].name, player[1].name)
 
 		for selfNum := 0; selfNum <= 1; selfNum++ {
 			opponentNum := (selfNum + 1) % 2
 			dataList := []string{player[opponentNum].name, player[opponentNum].address, strconv.Itoa(selfNum + 1)}
 			data := strings.Join(dataList, " ")
+			player[selfNum].connection.Write([]byte(`\play`))
 			player[selfNum].connection.Write([]byte(data))
 		}
 
