@@ -220,26 +220,26 @@ func main() {
 	conn.Write([]byte(data))
 
 	buffer := make([]byte, 1024)
+	count := 0
 
 	for {
-		count, _ := conn.Read(buffer)
+		count, _ = conn.Read(buffer)
 		if count == 0 {
 			continue
 		}
 		msg := string(buffer[:count])
-		if msg == `\play` {
+		if msg[:5] == `\play` {
 			break
 		}
 		fmt.Println(msg)
 	}
 
-	count, _ := conn.Read(buffer)
 	data = string(buffer[:count])
 	dataList = strings.Split(data, " ")
 
-	opponentName := dataList[0]
-	opponentAddrStr := dataList[1]
-	myNum, _ := strconv.Atoi(dataList[2])
+	opponentName := dataList[1]
+	opponentAddrStr := dataList[2]
+	myNum, _ := strconv.Atoi(dataList[3])
 
 	opponentAddr, _ := net.ResolveUDPAddr("udp", opponentAddrStr)
 	networkStatus = NetworkStatus{"udp", nil, pconn, opponentAddr}

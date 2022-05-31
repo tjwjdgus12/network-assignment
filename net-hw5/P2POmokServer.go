@@ -95,9 +95,8 @@ func main() {
 
 		for selfNum := 0; selfNum <= 1; selfNum++ {
 			opponentNum := (selfNum + 1) % 2
-			dataList := []string{player[opponentNum].name, player[opponentNum].address, strconv.Itoa(selfNum + 1)}
+			dataList := []string{`\play`, player[opponentNum].name, player[opponentNum].address, strconv.Itoa(selfNum + 1)}
 			data := strings.Join(dataList, " ")
-			player[selfNum].connection.Write([]byte(`\play`))
 			player[selfNum].connection.Write([]byte(data))
 		}
 
