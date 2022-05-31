@@ -1,5 +1,5 @@
 /**
-   ChatTCPClient.go
+   P2POmokClient.go
    by Jeong-Hyeon Seo (20172864)
 **/
 
@@ -308,16 +308,16 @@ func main() {
 				myTurn = !myTurn
 
 			case CMD_GG:
+				fmt.Printf("%s has given up.\n", opponentName)
 				fmt.Println("you win.")
 				isFinish = true
-				fmt.Printf("%s has given up.\n", opponentName)
 
 			case CMD_EXIT:
+				fmt.Printf("%s has exitted.\n", opponentName)
 				if !isFinish {
 					fmt.Println("you win.")
 					isFinish = true
 				}
-				fmt.Printf("%s has exitted.\n", opponentName)
 			}
 		}
 	}()
@@ -377,11 +377,13 @@ func main() {
 			if isFinish {
 				continue
 			}
+			fmt.Println("you have given up.")
 			fmt.Println("you lose.")
 			isFinish = true
 
 		case CMD_EXIT:
 			if !isFinish {
+				fmt.Println("you have given up.")
 				fmt.Println("you lose.")
 				isFinish = true
 			}

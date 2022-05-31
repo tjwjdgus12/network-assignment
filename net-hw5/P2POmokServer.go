@@ -29,7 +29,7 @@ func activateSignalHandler() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		fmt.Println(`\exit`)
+		fmt.Println("Bye~")
 		os.Exit(0)
 	}()
 }
