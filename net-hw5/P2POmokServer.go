@@ -19,6 +19,7 @@ import (
 
 type Client struct {
 	name       string
+	address    string
 	connection net.Conn
 }
 
@@ -39,8 +40,10 @@ func waitPlayer(listener *net.Listener, wg *sync.WaitGroup, player *Client) {
 		buffer := make([]byte, 64)
 		count, _ := conn.Read(buffer)
 		name := string(buffer[:count])
+		count, _ = conn.Read(buffer)
+		addr := string(buffer[:count])
 
-		*player = Client{name, conn}
+		*player = Client{name, addr, conn}
 
 		wg.Done()
 
@@ -72,7 +75,7 @@ func main() {
 
 		for selfNum := 0; selfNum <= 1; selfNum++ {
 			opponentNum := (selfNum + 1) % 2
-			dataList := []string{player[opponentNum].name, player[opponentNum].connection.LocalAddr().String(), strconv.Itoa(selfNum + 1)}
+			dataList := []string{player[opponentNum].name, player[opponentNum].address, strconv.Itoa(selfNum + 1)}
 			data := strings.Join(dataList, " ")
 			player[selfNum].connection.Write([]byte(data))
 		}

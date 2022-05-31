@@ -218,9 +218,13 @@ func main() {
 	serverName := "nsl2.cau.ac.kr"
 	serverPort := "22864"
 
+	pconn, _ := net.ListenPacket("udp", ":")
+	localAddr := pconn.LocalAddr().(*net.UDPAddr)
+
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
 
 	conn.Write([]byte(nickname))
+	conn.Write([]byte(localAddr.String()))
 
 	buffer := make([]byte, 1024)
 	count, _ := conn.Read(buffer)
@@ -229,15 +233,12 @@ func main() {
 
 	targetName := dataList[0]
 	targetAddrStr := dataList[1]
+	targetAddr, _ := net.ResolveUDPAddr("udp", targetAddrStr)
 	myNum, _ := strconv.Atoi(dataList[2])
 	opponentNum := (myNum % 2) + 1
 
 	conn.Write([]byte("thanks"))
 	conn.Close()
-
-	// P2P
-	pconn, _ := net.ListenPacket("udp", ":")
-	targetAddr, _ := net.ResolveUDPAddr("udp", targetAddrStr)
 
 	reader := bufio.NewReader(os.Stdin)
 
