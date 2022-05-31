@@ -77,6 +77,6 @@ func main() {
 			player[selfNum].connection.Write([]byte(data))
 		}
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(time.Millisecond * 50)
 	}
 }

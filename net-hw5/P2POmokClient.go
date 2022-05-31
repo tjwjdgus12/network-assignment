@@ -215,7 +215,7 @@ func main() {
 	}
 	nickname := os.Args[1]
 
-	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
+	serverName := "nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
@@ -233,6 +233,7 @@ func main() {
 	opponentNum := (myNum % 2) + 1
 
 	conn.Write([]byte("thanks"))
+	conn.Close()
 
 	// P2P
 	pconn, _ := net.ListenPacket("udp", ":")
@@ -241,7 +242,7 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	board := Board{}
-	x, y, count, win := -1, -1, 0, 0
+	stoneCnt := 0
 
 	myTurn := (myNum == 1)
 
@@ -255,6 +256,46 @@ func main() {
 
 	clear()
 	printBoard(board)
+
+	go func() {
+		buffer := make([]byte, 1024)
+		for {
+			count, _, _ := pconn.ReadFrom(buffer)
+			command := buffer[0]
+			message := string(buffer[1:count])
+
+			switch command {
+			case CMD_DEFAULT:
+				fmt.Printf("%s> message\n", targetName)
+
+			case CMD_PLACE:
+				xy := strings.Split(message, " ")
+				x, _ := strconv.Atoi(xy[0])
+				y, _ := strconv.Atoi(xy[1])
+
+				board[x][y] = opponentNum
+
+				clear()
+				printBoard(board)
+
+				win := checkWin(board, x, y)
+				if win != 0 {
+					fmt.Println("you lose")
+				}
+
+				stoneCnt += 1
+				if stoneCnt == Row*Col {
+					fmt.Println("draw")
+				}
+
+				myTurn = !myTurn
+
+			case CMD_GG:
+
+			case CMD_EXIT:
+			}
+		}
+	}()
 
 	for {
 		input, _ := reader.ReadString('\n')
@@ -291,14 +332,14 @@ func main() {
 			clear()
 			printBoard(board)
 
-			win = checkWin(board, x, y)
+			win := checkWin(board, x, y)
 			if win != 0 {
-				fmt.Printf("player %d wins!\n", win)
+				fmt.Println("you win")
 			}
 
-			count += 1
-			if count == Row*Col {
-				fmt.Printf("draw!\n")
+			stoneCnt += 1
+			if stoneCnt == Row*Col {
+				fmt.Println("draw")
 			}
 
 			myTurn = !myTurn
@@ -315,6 +356,4 @@ func main() {
 		data := fmt.Sprintf("%c%s", command, message)
 		pconn.WriteTo([]byte(data), targetAddr)
 	}
-
-	return
 }
