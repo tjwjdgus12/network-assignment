@@ -201,7 +201,7 @@ func main() {
 	}
 	nickname := os.Args[1]
 
-	serverName := "192.168.0.102" //"nsl2.cau.ac.kr"
+	serverName := "nsl2.cau.ac.kr"
 	serverPort := "22864"
 
 	pconn, _ := net.ListenPacket("udp", ":")
