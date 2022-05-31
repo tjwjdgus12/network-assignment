@@ -108,7 +108,7 @@ func serveClient(myname string, connection map[string]net.Conn) {
 			fmt.Printf("[%s is disconnected. There are %d users in the chat room.]\n", myname, len(connection))
 
 			for target := range connection {
-				data := fmt.Sprintf("\n[%s is disconnected. There are %d users in the chat room.]", myname, len(connection))
+				data := fmt.Sprintf("[%s is disconnected. There are %d users in the chat room.]", myname, len(connection))
 				connection[target].Write([]byte(data))
 			}
 			return
