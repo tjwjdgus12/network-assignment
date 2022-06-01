@@ -91,6 +91,7 @@ func main() {
 	for {
 		<-match
 
+		time.Sleep(time.Millisecond * 30)
 		fmt.Printf("%s and %s disconnected.\n", player[0].name, player[1].name)
 
 		for selfNum := 0; selfNum <= 1; selfNum++ {
@@ -100,6 +101,6 @@ func main() {
 			player[selfNum].connection.Write([]byte(data))
 		}
 
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * 30)
 	}
 }

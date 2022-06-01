@@ -309,6 +309,7 @@ func main() {
 
 				myTurn = !myTurn
 
+				// 10 sec timer start
 				go func(prevStoneCnt int) {
 					<-time.After(time.Second * 10)
 					if prevStoneCnt == stoneCnt {
