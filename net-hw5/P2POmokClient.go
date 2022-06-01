@@ -260,6 +260,17 @@ func main() {
 
 	if myTurn {
 		fmt.Printf("you play first.\n")
+
+		// 10 sec timer start
+		go func(prevStoneCnt int) {
+			<-time.After(time.Second * 10)
+			if prevStoneCnt == stoneCnt {
+				fmt.Println("time out.")
+				fmt.Println("you lose.")
+				isFinish = true
+				pconn.WriteTo([]byte{CMD_TIMEOUT}, opponentAddr)
+			}
+		}(stoneCnt)
 	} else {
 		fmt.Printf("%s plays first.\n", opponentName)
 	}
