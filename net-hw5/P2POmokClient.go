@@ -204,7 +204,7 @@ func main() {
 	nickname := os.Args[1]
 
 	serverName := "nsl2.cau.ac.kr"
-	serverPort := "22864"
+	serverPort := "52864"
 
 	pconn, _ := net.ListenPacket("udp", ":")
 	conn, _ := net.Dial("tcp", serverName+":"+serverPort)
@@ -264,7 +264,7 @@ func main() {
 		// 10 sec timer start
 		go func(prevStoneCnt int) {
 			<-time.After(time.Second * 10)
-			if prevStoneCnt == stoneCnt {
+			if !isFinish && prevStoneCnt == stoneCnt {
 				fmt.Println("time out.")
 				fmt.Println("you lose.")
 				isFinish = true
@@ -323,7 +323,7 @@ func main() {
 				// 10 sec timer start
 				go func(prevStoneCnt int) {
 					<-time.After(time.Second * 10)
-					if prevStoneCnt == stoneCnt {
+					if !isFinish && prevStoneCnt == stoneCnt {
 						fmt.Println("time out.")
 						fmt.Println("you lose.")
 						isFinish = true

@@ -68,6 +68,7 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 		conn.Read(buffer)
 
 		conn.Close()
+		conn.Close()
 		*cnt -= 1
 
 		if buffer[0] == CMD_EXIT {
@@ -77,7 +78,9 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 }
 
 func main() {
-	serverPort := "22864"
+	go activateSignalHandler()
+
+	serverPort := "52864"
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 
 	clientCnt := 0
@@ -92,6 +95,7 @@ func main() {
 		<-match
 
 		time.Sleep(time.Millisecond * 30)
+
 		fmt.Printf("%s and %s disconnected.\n", player[0].name, player[1].name)
 
 		for selfNum := 0; selfNum <= 1; selfNum++ {
