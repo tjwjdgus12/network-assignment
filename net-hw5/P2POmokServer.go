@@ -40,6 +40,9 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 	for {
 		conn, _ := (*listener).Accept()
 
+		defer conn.Close()
+		defer print("hi")
+
 		buffer := make([]byte, 1024)
 		count, _ := conn.Read(buffer)
 		data := string(buffer[:count])
@@ -67,7 +70,6 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 		// wait client's sign
 		conn.Read(buffer)
 
-		conn.Close()
 		conn.Close()
 		*cnt -= 1
 
