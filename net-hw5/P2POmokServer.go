@@ -24,14 +24,17 @@ type Client struct {
 
 const CMD_EXIT byte = 3
 
-func activateSignalHandler() {
+func activateSignalHandler(player *[2]Client) {
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		fmt.Println("Bye~")
-		os.Exit(0)
-	}()
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	<-c
+	for i := 0; i <= 1; i++ {
+		if player[i].connection != nil {
+			player[i].connection.Close()
+		}
+	}
+	fmt.Println("Bye~")
+	os.Exit(0)
 }
 
 func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, match chan int) {
@@ -39,9 +42,6 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 
 	for {
 		conn, _ := (*listener).Accept()
-
-		defer conn.Close()
-		defer print("hi")
 
 		buffer := make([]byte, 1024)
 		count, _ := conn.Read(buffer)
@@ -80,13 +80,13 @@ func waitPlayer(listener *net.Listener, cnt *int, player *[2]Client, myNum int, 
 }
 
 func main() {
-	go activateSignalHandler()
-
 	serverPort := "52864"
 	listener, _ := net.Listen("tcp", ":"+serverPort)
 
 	clientCnt := 0
 	var player [2]Client
+
+	go activateSignalHandler(&player)
 
 	match := make(chan int)
 
