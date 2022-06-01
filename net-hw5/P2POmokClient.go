@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // command list
@@ -22,6 +23,7 @@ const (
 	CMD_PLACE        // 1
 	CMD_GG           // 2
 	CMD_EXIT         // 3
+	CMD_TIMEOUT      // 4
 	CMD_INVALID = 255
 )
 
@@ -307,6 +309,16 @@ func main() {
 
 				myTurn = !myTurn
 
+				go func(prevStoneCnt int) {
+					<-time.After(time.Second * 10)
+					if prevStoneCnt == stoneCnt {
+						fmt.Println("time out.")
+						fmt.Println("you lose.")
+						isFinish = true
+						pconn.WriteTo([]byte{CMD_TIMEOUT}, opponentAddr)
+					}
+				}(stoneCnt)
+
 			case CMD_GG:
 				fmt.Printf("%s has given up.\n", opponentName)
 				fmt.Println("you win.")
@@ -318,6 +330,11 @@ func main() {
 					fmt.Println("you win.")
 					isFinish = true
 				}
+
+			case CMD_TIMEOUT:
+				fmt.Printf("%s has timed out.\n", opponentName)
+				fmt.Println("you win.")
+				isFinish = true
 			}
 		}
 	}()
